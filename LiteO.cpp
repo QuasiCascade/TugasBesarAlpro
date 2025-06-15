@@ -5,6 +5,7 @@
 #include <time.h>
 #include <windows.h>
 #include <vector>
+#include <iomanip>
 using namespace std;
 
 /*
@@ -35,9 +36,8 @@ void wait(float x);
 void importtgerak(vector<coordinates> &tampungan);
 void animation(vector<coordinates> &tampungan, string mainBoard[21][51], int score);
 void editTgerak();
-void bacaHadiah();
-void simpanHadiah(Hadiah &h);
-void tambahHadiah();
+void tabelHadiah(const vector<string>& lines, const string& pagar);
+void tambahHadiah(vector<string>& lines, int& idxPagar, const string& pagar, const string& filename)
 
 int main()
 {
@@ -258,59 +258,65 @@ void editTgerak()
     }
 }
 
-vector<Hadiah> listHadiah;
+void tabelHadiah(const vector<string>& lines, const string& pagar) {
+    cout << "\nTabel Data:\n";
+    cout << string(41, '-') << endl;
+    cout << "|" << left << setw(8) << "x"
+         << "|" << setw(8) << "y"
+         << "|" << setw(12) << "nama"
+         << "|" << setw(8) << "skor" << "|" << endl;
+    cout << string(41, '-') << endl;
 
-void bacaHadiah(){
-    ifstream file("thadiah.txt");
-
-    if(!file){
-        cout << "File tidak ditemukan atau gagal dibuka.\n";
-        return;
+    for (const auto& line : lines) {
+        if (line == pagar) break;
+        istringstream iss(line);
+        string x, y, nama, skor;
+        iss >> x >> y >> nama >> skor;
+        if (!x.empty() && !y.empty() && !nama.empty() && !skor.empty()) {
+            cout << "|" << left << setw(8) << x
+                 << "|" << setw(8) << y
+                 << "|" << setw(12) << nama
+                 << "|" << setw(8) << skor << "|" << endl;
+        }
     }
-
-    Hadiah h;
-    while(file >> h.x >> h.y >> h.nama >> h.skor){
-        listHadiah.push_back(h);
-    }
-    file.close();
+    cout << string(41, '-') << endl;
 }
 
-void simpanHadiah(Hadiah &h){
-    ofstream file("thadiah.txt", ios::app); // append mode
-    if (!file){
-        cout << "Gagal menyimpan ke file.\n";
-        return;
+void tambahHadiah(vector<string>& lines, int& idxPagar, const string& pagar, const string& filename) {
+    char lagi;
+    cout << "\nApakah Anda ingin menambah hadiah? (y/n): ";
+    cin >> lagi;
+    cin.ignore();
+
+    bool dataDitambah = false;
+    while (lagi == 'y' || lagi == 'Y') {
+        string dataBaru;
+        cout << "Masukkan data baru (format: x y nama skor): ";
+        getline(cin, dataBaru);
+
+        if (idxPagar != -1) {
+            lines.insert(lines.begin() + idxPagar, dataBaru);
+            idxPagar++;
+        } else {
+            lines.push_back(dataBaru);
+        }
+
+        dataDitambah = true;
+        cout << "Tambah hadiah lagi? (y/n): ";
+        cin >> lagi;
+        cin.ignore();
     }
-    file << h.x << " " << h.y << " " << h.nama << " " << h.skor << endl;
 
-    file << "## ## ## ##" << endl;
-    file.close();
-}
-
-void tambahHadiah(){
-    cout << "Isi hadiah saat ini:" << endl;
-    cout << "---------------------------" << endl;
-    cout << "|x    |y    |nama  |skor  |" << endl;
-    cout << "---------------------------" << endl;
-    for (auto &h : listHadiah) {
-        cout << "|" << h.x << "    |" << h.y << "    |" << h.nama << "  |" << h.skor << "  |" << endl;
-    }
-    cout << "---------------------------" << endl;
-
-    char lanjut;
-    cout << "ingin mengisi: (Y/T) ";
-    cin >> lanjut;
-    if (lanjut == 'Y' || lanjut == 'y') {
-        Hadiah h;
-        cout << "x: "; 
-        cin >> h.x;
-        cout << "y: "; 
-        cin >> h.y;
-        cout << "nama: "; 
-        cin >> h.nama;
-        cout << "skor: "; 
-        cin >> h.skor;
-        listHadiah.push_back(h);
-        simpanHadiah(h);
+    if (dataDitambah) {
+        ofstream outfile(filename);
+        if (outfile.is_open()) {
+            for (const auto& l : lines) outfile << l << endl;
+            outfile.close();
+            cout << "Hadiah berhasil ditambahkan sebelum simbol pagar.\n";
+        } else {
+            cout << "Tidak bisa membuka file untuk menulis.\n";
+        }
+    } else {
+        cout << "Tidak ada hadiah yang ditambahkan ke file.\n";
     }
 }
