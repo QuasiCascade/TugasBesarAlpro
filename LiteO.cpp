@@ -5,6 +5,8 @@
 #include <time.h>
 #include <windows.h>
 #include <vector>
+#include <iomanip>
+#include <sstream>
 using namespace std;
 
 /*
@@ -20,6 +22,12 @@ typedef struct
     string y;
 } coordinates;
 
+typedef struct
+{
+    int x, y, skor;
+    string nama;
+}hadiah;
+
 void titleCard();
 void topBottomBoard(string board[21][51]);
 void printBoard(string board[21][51], int score);
@@ -29,6 +37,8 @@ void wait(float x);
 void importtgerak(vector<coordinates> &tampungan);
 void animation(vector<coordinates> &tampungan, string mainBoard[21][51], int score);
 void editTgerak();
+void tabelHadiah(const vector<string>& lines, const string& pagar);
+void tambahHadiah(vector<string>& lines, int& idxPagar, const string& pagar, const string& filename);
 
 int main()
 {
@@ -41,6 +51,22 @@ int main()
         Jadi Diasumsikan bahwa tabel dihitung dimulai dari 0.
         jadi panjangnya adalah 0-20, dan lebarnya berukuran 0-50.
     */
+
+    string filename = "thadiah.txt";
+    vector<string> lines;
+    string line, pagar = "## ## ## ##";
+    int indeksPagar = -1;
+    ifstream infile(filename);
+    if (infile.is_open()) {
+        while (getline(infile, line)) {
+            lines.push_back(line);
+            if (line == pagar) idxPagar = lines.size() - 1;
+        }
+        infile.close();
+    } else {
+        cout << "Tidak bisa membuka file untuk dibaca.\n";
+        return 1;
+    }
 
     int score = 0;
     coordinates movement[100];
@@ -246,5 +272,68 @@ void editTgerak()
     while (getline(gerak, baris))
     {
         isidata.push_back(baris);
+    }
+}
+
+void tabelHadiah(const vector<string>& lines, const string& pagar) {
+    cout << "\nTabel Data:\n";
+    cout << string(41, '-') << endl;
+    cout << "|" << left << setw(8) << "x"
+         << "|" << setw(8) << "y"
+         << "|" << setw(12) << "nama"
+         << "|" << setw(8) << "skor" << "|" << endl;
+    cout << string(41, '-') << endl;
+
+    for (const auto& line : lines) {
+        if (line == pagar) break;
+        istringstream iss(line);
+        string x, y, nama, skor;
+        iss >> x >> y >> nama >> skor;
+        if (!x.empty() && !y.empty() && !nama.empty() && !skor.empty()) {
+            cout << "|" << left << setw(8) << x
+                 << "|" << setw(8) << y
+                 << "|" << setw(12) << nama
+                 << "|" << setw(8) << skor << "|" << endl;
+        }
+    }
+    cout << string(41, '-') << endl;
+}
+
+void tambahHadiah(vector<string>& lines, int& idxPagar, const string& pagar, const string& filename) {
+    char lagi;
+    cout << "\nApakah Anda ingin menambah data? (y/n): ";
+    cin >> lagi;
+    cin.ignore();
+
+    bool dataDitambah = false;
+    while (lagi == 'y' || lagi == 'Y') {
+        string dataBaru;
+        cout << "Masukkan data baru (format: x y nama skor): ";
+        getline(cin, dataBaru);
+
+        if (idxPagar != -1) {
+            lines.insert(lines.begin() + idxPagar, dataBaru);
+            idxPagar++;
+        } else {
+            lines.push_back(dataBaru);
+        }
+
+        dataDitambah = true;
+        cout << "Tambah data lagi? (y/n): ";
+        cin >> lagi;
+        cin.ignore();
+    }
+
+    if (dataDitambah) {
+        ofstream outfile(filename);
+        if (outfile.is_open()) {
+            for (const auto& l : lines) outfile << l << endl;
+            outfile.close();
+            cout << "Data berhasil ditambahkan sebelum simbol pagar.\n";
+        } else {
+            cout << "Tidak bisa membuka file untuk menulis.\n";
+        }
+    } else {
+        cout << "Tidak ada data yang ditambahkan ke file.\n";
     }
 }
